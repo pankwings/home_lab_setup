@@ -1,0 +1,63 @@
+#/etc/caddy/Caddyfile
+{
+	acme_dns cloudflare {env.CF_API_TOKEN}
+}
+
+pankwings.org {
+	respond "Hi :)"
+}
+
+*.pankwings.org {
+	log {
+		output file /var/log/caddy/error.log
+		level debug
+	}
+	@grafana host grafana.pankwings.org
+	handle @grafana {
+		reverse_proxy rpi2.home:3000
+	}
+
+	@prometheus host prometheus.pankwings.org
+	handle @prometheus {
+		reverse_proxy rpi2.home:9090
+	}
+
+	@pihole host pihole.pankwings.org
+	handle @pihole {
+		redir / /admin{uri}
+		reverse_proxy rpi1.home
+	}
+
+        @dashy host dashy.pankwings.org
+        handle @dashy {
+                reverse_proxy rpi4.home:4000
+        }
+
+	@helloworld host helloworld.pankwings.org
+	handle @helloworld {
+		respond "hello World"
+	}
+
+	# Fallback for otherwise unhandled domains
+	handle {
+		respond "Not Found" 404
+	}
+}
+
+*.rpi2.pankwings.org {
+	log {
+		output file /var/log/caddy/error.log
+		level debug
+	}
+	@metrics host metrics.rpi2.pankwings.org
+	handle @metrics {
+		redir / /metrics
+		reverse_proxy rpi2.home:9100
+
+	}
+	# Fallback for otherwise unhandled domains
+	handle {
+		respond "Not Found" 404
+	}
+}
+
